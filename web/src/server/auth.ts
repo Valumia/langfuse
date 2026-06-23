@@ -762,6 +762,10 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
               admin: true,
               v4BetaEnabled: true,
               organizationMemberships: {
+                // Newest first so demo project is last for the `project/~/` sentinel
+                orderBy: {
+                  createdAt: "desc",
+                },
                 include: {
                   organization: {
                     include: {
@@ -770,6 +774,9 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
                           deletedAt: {
                             equals: null,
                           },
+                        },
+                        orderBy: {
+                          createdAt: "desc",
                         },
                       },
                     },
@@ -841,20 +848,24 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
                     canToggleV4:
                       v4WriteMode === "dual" && dualPreviewAvailable
                         ? isLangfuseCloud
-                          ? canToggleV4({
-                              userCreatedAt: dbUser.createdAt,
-                              organizations: dbUser.organizationMemberships.map(
-                                (orgMembership) => ({
-                                  id: orgMembership.organization.id,
-                                  createdAt:
-                                    orgMembership.organization.createdAt,
-                                }),
-                              ),
-                              excludedOrganizationIds:
-                                env.NEXT_PUBLIC_DEMO_ORG_ID
-                                  ? [env.NEXT_PUBLIC_DEMO_ORG_ID]
-                                  : [],
-                            })
+                          ? canToggleV4(
+                              {
+                                userCreatedAt: dbUser.createdAt,
+                                organizations:
+                                  dbUser.organizationMemberships.map(
+                                    (orgMembership) => ({
+                                      id: orgMembership.organization.id,
+                                      createdAt:
+                                        orgMembership.organization.createdAt,
+                                    }),
+                                  ),
+                                excludedOrganizationIds:
+                                  env.NEXT_PUBLIC_DEMO_ORG_ID
+                                    ? [env.NEXT_PUBLIC_DEMO_ORG_ID]
+                                    : [],
+                              },
+                              { isLangfuseCloudAdmin: dbUser.admin },
+                            )
                           : true
                         : false,
                     canCreateOrganizations: canCreateOrganizations(
